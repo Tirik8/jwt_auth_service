@@ -1,3 +1,8 @@
 .env
 certs/
 poetry.lock
+alembic.ini
+migrations/*
+!migrations/env.py
+__pycache__
+app/core/config.py
