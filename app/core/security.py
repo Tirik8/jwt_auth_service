@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Annotated, Optional
+from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from app.core.config import settings
-from app.db import models, schemas, crud
+from app.db import models, crud
 from app.db.database import get_db
 
 
@@ -18,7 +18,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 def load_rsa_keys() -> tuple[str, str]:
-    """Загрузка RSA ключей из файлов"""
     try:
         private_key = settings.JWT_PRIVATE_KEY_PATH.read_text()
         public_key = settings.JWT_PUBLIC_KEY_PATH.read_text()
