@@ -14,7 +14,6 @@ from app.db.database import get_db
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 def load_rsa_keys() -> tuple[str, str]:
@@ -24,7 +23,6 @@ def load_rsa_keys() -> tuple[str, str]:
         return private_key, public_key
     except Exception as e:
         raise RuntimeError(f"Failed to load RSA keys: {str(e)}")
-
 
 JWT_PRIVATE_KEY, JWT_PUBLIC_KEY = load_rsa_keys()
 
@@ -96,6 +94,7 @@ async def validate_token(
         )
     
     return user
+
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
