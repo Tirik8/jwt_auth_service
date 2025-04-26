@@ -51,6 +51,7 @@ async def login_for_get_tokens(
     form_data: schemas.UserAuth,
     db: Session = Depends(get_db)
 ):
+    
     user = crud.authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -87,7 +88,8 @@ async def refresh_tokens(
             detail="Invalid refresh token",
         )
         
-    crud.revoke_refresh_token(db, db_token.id)
+    #crud.revoke_refresh_token(db, db_token.id)
+    old_token = crud.revoke_refresh_token_by_token(db, db_token.token)
     
     user = crud.get_user_by_id(db, db_token.user_id)
     
@@ -98,7 +100,8 @@ async def refresh_tokens(
     refresh_token, _ = crud.create_refresh_token(
         db,
         user_id=db_token.user_id,
-        expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        previous_token_id = old_token.id
     )
     
     return {

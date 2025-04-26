@@ -46,11 +46,13 @@ def create_refresh_token(
     expires_at = datetime.utcnow() + (expires_delta or timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS))
     
     # Деактивируем предыдущие токены пользователя
+    '''
     db.query(models.RefreshToken)\
       .filter(models.RefreshToken.user_id == user_id)\
       .update({"is_active": False})
+    '''
     
-    # Сначала создаем JWT токен
+    #создаем JWT токен
     token_data = {
         "sub": str(user_id),
         "type": "refresh",
@@ -58,7 +60,7 @@ def create_refresh_token(
     }
     token = security.create_refresh_token(data=token_data, expires_delta=expires_delta)
     
-    # Затем сохраняем в БД
+    #сохраняем в БД
     db_token = models.RefreshToken(
         token=token,
         user_id=user_id,
@@ -77,9 +79,19 @@ def get_refresh_token(db: Session, token: str):
             .filter(models.RefreshToken.token == token)\
             .first()
 
-def revoke_refresh_token(db: Session, token_id: int):
+def revoke_refresh_token_by_id(db: Session, token_id: int):
     db_token = db.query(models.RefreshToken)\
                 .filter(models.RefreshToken.id == token_id)\
+                .first()
+    if db_token:
+        db_token.is_active = False
+        db.commit()
+        db.refresh(db_token)
+    return db_token
+
+def revoke_refresh_token_by_token(db: Session, token: str):
+    db_token = db.query(models.RefreshToken)\
+                .filter(models.RefreshToken.token == token)\
                 .first()
     if db_token:
         db_token.is_active = False
