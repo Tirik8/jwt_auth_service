@@ -4,15 +4,13 @@ from datetime import timedelta
 
 from app.core import security
 from app.core.config import settings
-from app.db import crud, schemas
+from app.db import crud, models, schemas
 from app.db.database import get_db
 from app.utils import cookie
 
-router = APIRouter(tags=["auth"])
+router = APIRouter()
 
-
-
-@router.post("/register", response_model=schemas.TokenResponse)
+@router.post("/register", response_model=schemas.TokenResponse, status_code=status.HTTP_201_CREATED)
 async def register_and_login(
     user: schemas.UserCreate,
     responce: Response,
@@ -48,13 +46,18 @@ async def register_and_login(
         "access_token": access_token,
         "token_type": "bearer"
     }
+    
 
-@router.post("/auth", response_model=schemas.TokenResponse)
+@router.get("/verify_email")
+async def verify_email(token: str):
+    pass
+
+
+@router.post("/login", response_model=schemas.TokenResponse)
 async def login(
     form_data: schemas.UserAuth,
     responce: Response,
     db: Session = Depends(get_db),
-    
 ):
     
     user = crud.authenticate_user(db, form_data.username, form_data.password)
@@ -80,6 +83,7 @@ async def login(
         "access_token": access_token,
         "token_type": "bearer"
     }
+
 
 @router.post("/refresh", response_model=schemas.TokenResponse)
 async def refresh_tokens(
@@ -126,7 +130,8 @@ async def refresh_tokens(
         "token_type": "bearer"
     }
     
-@router.post("/logout")
+    
+@router.delete("/logout")
 async def logout(
     responce: Response,
     request: Request,
@@ -139,6 +144,12 @@ async def logout(
     cookie.delete_refresh_token_cookie(responce)
     return {"message": "Logget out sucksessfully"}
 
-@router.get("/verify_key")
+
+@router.post("/forgot-password")
+async def forgot_password():
+    pass
+
+
+@router.get("/get_public_rsa_key")
 async def get_verify_key():
     return {"rsa_public_key": settings.JWT_PUBLIC_KEY_PATH.read_text()}

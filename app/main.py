@@ -1,17 +1,15 @@
+from datetime import datetime
 from fastapi import FastAPI
 
-from app.core.config import settings
-from app.routers import auth, users
+from app import api
 from app.db.database import engine, Base
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-
-app.include_router(auth.router)
-app.include_router(users.router)
+app.include_router(api.router, prefix="/api")
 
 @app.get("/")
 def read_root():
-    return {"message": "Auth Service"}
+    return {"status": "ok", "timestamp": datetime.now()}
