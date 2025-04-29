@@ -6,3 +6,4 @@ migrations/*
 !migrations/env.py
 __pycache__
 app/core/config.py
+Dockerfile
