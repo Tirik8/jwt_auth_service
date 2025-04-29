@@ -4,7 +4,7 @@ from datetime import timedelta
 
 from app.core import security
 from app.core.config import settings
-from app.db import crud, models, schemas
+from app.db import crud, schemas
 from app.db.database import get_db
 from app.utils import cookie
 

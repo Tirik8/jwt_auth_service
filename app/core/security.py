@@ -5,36 +5,25 @@ from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
 
 from app.core.config import settings
 from app.db import models, crud
 from app.db.database import get_db
+from app.utils import rsa
 
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated="auto")
+
+JWT_PRIVATE_KEY, JWT_PUBLIC_KEY = rsa.load_rsa_keys()
 
 
-def load_rsa_keys() -> tuple[str, str]:
-    try:
-        private_key = settings.JWT_PRIVATE_KEY_PATH.read_text()
-        public_key = settings.JWT_PUBLIC_KEY_PATH.read_text()
-        return private_key, public_key
-    except Exception as e:
-        raise RuntimeError(f"Failed to load RSA keys: {str(e)}")
-
-JWT_PRIVATE_KEY, JWT_PUBLIC_KEY = load_rsa_keys()
-
-
-class TokenData(BaseModel):
-    username: Optional[str] = None
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    
+def verify_password(
+    plain_password: str, 
+    hashed_password: str
+    ) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 def get_password_hash(password: str) -> str:
-    
     return pwd_context.hash(password)
 
 
