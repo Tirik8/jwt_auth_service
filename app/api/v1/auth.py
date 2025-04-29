@@ -35,8 +35,9 @@ async def register_and_login(
         data={"sub": user.username},
         expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
-    refresh_token = security.create_refresh_token(
-        data={"sub": user.username},
+    refresh_token, _ = crud.create_refresh_token(
+        db,
+        user_id = user.id,
         expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     )
     
@@ -109,7 +110,7 @@ async def refresh_tokens(
             detail="Invalid refresh token",
         )
         
-    old_token = crud.revoke_refresh_token_by_token(db, db_token.token)
+    old_token = crud.revoke_refresh_token_by_id(db, db_token.id)
     user = crud.get_user_by_id(db, db_token.user_id)
     
     access_token = security.create_access_token(
@@ -123,6 +124,7 @@ async def refresh_tokens(
         expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
         previous_token_id = old_token.id
     )
+    cookie.delete_refresh_token_cookie(responce)
     cookie.set_refresh_token_cookie(responce, refresh_token)
     
     return {
@@ -139,8 +141,9 @@ async def logout(
 ):
     refresh_token = request.cookies.get(settings.REFRESH_TOKEN_COOKIE_NAME)
     db_token = security.verify_refresh_token(db, refresh_token)
-    crud.revoke_refresh_token_by_token(db, db_token.token)
-    
+    if db_token:    
+        crud.revoke_refresh_token_by_id(db, db_token.id)
+        
     cookie.delete_refresh_token_cookie(responce)
     return {"message": "Logget out sucksessfully"}
 

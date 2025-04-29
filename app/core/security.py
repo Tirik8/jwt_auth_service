@@ -12,7 +12,16 @@ from app.db.database import get_db
 from app.utils import rsa
 
 
-pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated="auto")
+pwd_context = CryptContext(
+    schemes=["argon2"], 
+    deprecated="auto",
+    
+    argon2__time_cost=3,
+    argon2__memory_cost=65536,
+    argon2__parallelism=4,
+    argon2__hash_len=32,
+    argon2__salt_len=16,
+    )
 
 JWT_PRIVATE_KEY, JWT_PUBLIC_KEY = rsa.load_rsa_keys()
 
@@ -23,12 +32,16 @@ def verify_password(
     ) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
-def get_password_hash(password: str) -> str:
+def get_password_hash(
+    password: str
+    ) -> str:
     return pwd_context.hash(password)
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
-    
+def create_access_token(
+    data: dict, 
+    expires_delta: timedelta | None = None
+    ) -> str:
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -39,8 +52,10 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     
     return encoded_jwt
 
-def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    
+def create_refresh_token(
+    data: dict, 
+    expires_delta: Optional[timedelta] = None
+    ) -> str:
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -51,8 +66,9 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) 
     
     return encoded_jwt
 
-def verify_token(token: str) -> dict:
-    
+def verify_token(
+    token: str
+    ) -> dict:
     try:
         payload = jwt.decode(token, JWT_PUBLIC_KEY, algorithms=[settings.ALGORITHM])
         return payload
@@ -63,24 +79,31 @@ def verify_token(token: str) -> dict:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-def verify_refresh_token(db: Session, token: str):
-    
+def verify_refresh_token(
+    db: Session, 
+    token: str
+    ):
     try:
         payload = verify_token(token)
-        user_id: str = payload.get("sub")
+        user_id: int = int(payload.get("sub"))
+        token_id: int = int(payload.get("token_id"))
         
         if user_id is None:
-            return None
+            raise HTTPException(status_code=400, detail="Verify token error")
         
-        db_token = crud.get_refresh_token(db, token)
+        db_token = crud.get_refresh_token(db, token_id)
         if not db_token or not db_token.is_active:
-            return None
+            raise HTTPException(status_code=400, detail="Verify token error")
             
         return db_token
     except JWTError:
-        return None
+        raise HTTPException(status_code=400, detail="Verify token error")
 
-async def validate_token(token: str, db: Session, token_type: str = "access") -> models.User:
+async def validate_token(
+    token: str, 
+    db: Session, 
+    token_type: str = "access"
+    ) -> models.User:
     payload = verify_token(token)
     
     username: str = payload.get("sub")
@@ -104,8 +127,10 @@ async def validate_token(token: str, db: Session, token_type: str = "access") ->
     return user
 
 
-async def get_current_user(credentials: Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer())], db: Session = Depends(get_db)) -> models.User:
-
+async def get_current_user(
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer())], 
+    db: Session = Depends(get_db)
+    ) -> models.User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -117,25 +142,26 @@ async def get_current_user(credentials: Annotated[HTTPAuthorizationCredentials, 
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
-        token_data = TokenData(username=username)
     except JWTError:
         raise credentials_exception
     
-    user = crud.get_user_by_username(db, username=token_data.username)
+    user = crud.get_user_by_username(db, username=username)
     if user is None:
         raise credentials_exception
     
     return user
 
-async def get_current_active_user(current_user: models.User = Depends(get_current_user)):
-
+async def get_current_active_user(
+    current_user: models.User = Depends(get_current_user)
+    ):
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     
     return current_user
 
-async def is_superuser(current_user: models.User = Depends(get_current_active_user)) -> bool:
-
+async def is_superuser(
+    current_user: models.User = Depends(get_current_active_user)
+    ) -> bool:
     if not current_user.is_superuser:
         raise HTTPException(status_code=403, detail="You not superuser")
     return True

@@ -46,15 +46,7 @@ def create_refresh_token(
     
     expires_at = datetime.utcnow() + (expires_delta or timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS))
     
-    token_data = {
-        "sub": str(user_id),
-        "type": "refresh",
-        "created_at": datetime.utcnow().isoformat()
-    }
-    token = security.create_refresh_token(data=token_data, expires_delta=expires_delta)
-    
     db_token = models.RefreshToken(
-        token=token,
         user_id=user_id,
         expires_at=expires_at,
         is_active=True,
@@ -64,26 +56,25 @@ def create_refresh_token(
     db.commit()
     db.refresh(db_token)
     
+    token_data = {
+        "sub": str(user_id),
+        "token_id": db_token.id,
+        "type": "refresh",
+        "created_at": datetime.utcnow().isoformat()
+    }
+    
+    token = security.create_refresh_token(data=token_data, expires_delta=expires_delta)
+
     return token, db_token
 
-def get_refresh_token(db: Session, token: str):
+def get_refresh_token(db: Session, id: str):
     return db.query(models.RefreshToken)\
-            .filter(models.RefreshToken.token == token)\
+            .filter(models.RefreshToken.id == id)\
             .first()
 
 def revoke_refresh_token_by_id(db: Session, token_id: int):
     db_token = db.query(models.RefreshToken)\
                 .filter(models.RefreshToken.id == token_id)\
-                .first()
-    if db_token:
-        db_token.is_active = False
-        db.commit()
-        db.refresh(db_token)
-    return db_token
-
-def revoke_refresh_token_by_token(db: Session, token: str):
-    db_token = db.query(models.RefreshToken)\
-                .filter(models.RefreshToken.token == token)\
                 .first()
     if db_token:
         db_token.is_active = False
