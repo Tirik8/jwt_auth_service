@@ -13,7 +13,7 @@ router = APIRouter(tags=["auth"])
 
 
 @router.post("/register", response_model=schemas.TokenResponse)
-async def register_user(
+async def register_and_login(
     user: schemas.UserCreate,
     responce: Response,
     db: Session = Depends(get_db),
@@ -50,7 +50,7 @@ async def register_user(
     }
 
 @router.post("/auth", response_model=schemas.TokenResponse)
-async def login_for_get_tokens(
+async def login(
     form_data: schemas.UserAuth,
     responce: Response,
     db: Session = Depends(get_db),
