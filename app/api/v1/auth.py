@@ -151,8 +151,3 @@ async def logout(
 @router.post("/forgot-password")
 async def forgot_password():
     pass
-
-
-@router.get("/get_public_rsa_key")
-async def get_verify_key():
-    return {"rsa_public_key": settings.JWT_PUBLIC_KEY_PATH.read_text()}
