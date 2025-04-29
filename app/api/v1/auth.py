@@ -50,7 +50,7 @@ async def register_and_login(
     
 
 @router.get("/verify_email")
-async def verify_email(token: str):
+async def verify_email(email_token: str):
     pass
 
 
