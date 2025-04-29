@@ -44,8 +44,7 @@ class RefreshTokenResponse(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
-    token_type: str
-    expires_at: datetime
+    token_type: str = "bearer"
 
 class TokenPairResponse(BaseModel):
     access_token: str

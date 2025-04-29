@@ -20,3 +20,7 @@ async def get_user_by_id(user_id: int, superuser: bool = Depends(security.is_sup
     
     user = crud.get_user_by_id(db, id=user_id)
     return user
+
+@router.get('/sessions')
+async def get_sessions():
+    pass
