@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
 from app.core import security
 from app.db import models, schemas
@@ -89,3 +90,12 @@ def revoke_refresh_token_by_token(db: Session, token: str):
         db.commit()
         db.refresh(db_token)
     return db_token
+
+def get_refresh_tokens(db: Session, count: int, user_id: int):
+    return db.query(models.RefreshToken)\
+        .filter(models.RefreshToken.user_id == user_id)\
+        .filter(models.RefreshToken.is_active == True)\
+        .order_by(desc(models.RefreshToken.created_at))\
+        .limit(count)\
+        .all()
+        

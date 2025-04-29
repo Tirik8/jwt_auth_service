@@ -137,4 +137,8 @@ async def logout(
     crud.revoke_refresh_token_by_token(db, db_token.token)
     
     cookie.delete_refresh_token_cookie(responce)
-    return {"maeeage": "Logget out sucksessfully"}
+    return {"message": "Logget out sucksessfully"}
+
+@router.get("/verify_key")
+async def get_verify_key():
+    return {"rsa_public_key": settings.JWT_PUBLIC_KEY_PATH.read_text()}
