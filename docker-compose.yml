@@ -1,0 +1,16 @@
+services:
+  pg:
+    image: postgres:17.4
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: default
+      POSTGRES_DB: users
+    ports:
+      - "5432:5432"
+
+  app:
+    build:
+      dockerfile: ./Dockerfile
+      context: ./
+    ports:
+      - "8000:8000"
