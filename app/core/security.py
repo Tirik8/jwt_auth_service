@@ -17,8 +17,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def load_rsa_keys() -> tuple[str, str]:
     try:
-        private_key = settings.JWT_PRIVATE_KEY_PATH.read_text()
-        public_key = settings.JWT_PUBLIC_KEY_PATH.read_text()
+        private_key = settings.JWT_PRIVATE_KEY_PATH.read_text(encoding="utf-8")
+        public_key = settings.JWT_PUBLIC_KEY_PATH.read_text(encoding="utf-8")
         return private_key, public_key
     except Exception as e:
         raise RuntimeError(f"Failed to load RSA keys: {str(e)}")
