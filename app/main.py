@@ -11,9 +11,11 @@ app = FastAPI()
 
 app.include_router(api.router, prefix="/api")
 
+
 @app.get("/")
 def read_root():
     return {"status": "ok", "timestamp": datetime.now()}
+
 
 @app.get("/get_public_rsa_key")
 async def get_verify_key():

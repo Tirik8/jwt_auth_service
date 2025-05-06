@@ -6,11 +6,12 @@ from sqlalchemy.orm import Session
 
 router = APIRouter()
 
+
 @router.get("/users/{user_id}")
 async def get_user_by_id(
-    user_id: int, 
-    user_me: bool = Depends(security.is_superuser), 
-    db: Session = Depends(get_db)
-    ):
+    user_id: int,
+    user_me: bool = Depends(security.is_superuser),
+    db: Session = Depends(get_db),
+):
     user = crud.get_user_by_id(db, id=user_id)
     return user
