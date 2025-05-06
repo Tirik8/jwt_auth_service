@@ -5,7 +5,6 @@ description = ""
 authors = ["Tirik8 <yaroslavsemenoviop@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-package-mode = true
 
 [tool.poetry.dependencies]
 python = "^3.10"
