@@ -49,7 +49,6 @@ def create_refresh_token(
     expires_delta: timedelta | None = None,
     previous_token_id: int | None = None,
 ) -> tuple[str, models.RefreshToken]:
-
     expires_at = datetime.utcnow() + (
         expires_delta or timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     )

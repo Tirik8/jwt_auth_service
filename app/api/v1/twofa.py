@@ -1,10 +1,6 @@
 from fastapi import APIRouter, Depends
-from fastapi.security import HTTPBearer
 from app.core import security
-from app.db import crud, models
-from fastapi import Security
-from app.db.database import get_db
-from sqlalchemy.orm import Session
+from app.db import models
 
 router = APIRouter()
 

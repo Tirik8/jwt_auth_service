@@ -61,7 +61,6 @@ async def login(
     responce: Response,
     db: Session = Depends(get_db),
 ):
-
     user = crud.authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -90,7 +89,6 @@ async def refresh_tokens(
     request: Request,
     db: Session = Depends(get_db),
 ):
-
     refresh_token = request.cookies.get(settings.REFRESH_TOKEN_COOKIE_NAME)
 
     if not refresh_token:

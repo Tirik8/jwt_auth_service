@@ -7,3 +7,4 @@ migrations/*
 __pycache__
 app/core/config.py
 Dockerfile
+.ruff_cache/
