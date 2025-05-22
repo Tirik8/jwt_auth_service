@@ -13,15 +13,7 @@ from app.utils import rsa
 from app.utils.exception import ServerException
 
 
-pwd_context = CryptContext(
-    schemes=["argon2"],
-    deprecated="auto",
-    argon2__time_cost=3,
-    argon2__memory_cost=65536,
-    argon2__parallelism=4,
-    argon2__hash_len=32,
-    argon2__salt_len=16,
-)
+pwd_context = CryptContext(**settings.CRYPTO_CONTEXT.config_dict)
 
 JWT_PRIVATE_KEY, JWT_PUBLIC_KEY = rsa.load_rsa_keys()
 
