@@ -1,10 +1,5 @@
 .venv
 .env
-certs/
-poetry.lock
-alembic.ini
-migrations/*
-!migrations/env.py
-__pycache__
-Dockerfile
 .ruff_cache/
+certs/
+__pycache__
