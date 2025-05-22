@@ -94,7 +94,7 @@ def get_refresh_tokens(db: Session, count: int, user_id: int):
     return (
         db.query(models.RefreshToken)
         .filter(models.RefreshToken.user_id == user_id)
-        .filter(models.RefreshToken.is_active == True)
+        .filter(models.RefreshToken.is_active)
         .order_by(desc(models.RefreshToken.created_at))
         .limit(count)
         .all()
