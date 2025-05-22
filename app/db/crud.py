@@ -24,7 +24,7 @@ def authenticate_user(db: Session, username_or_email: str, password: str):
         user = get_user_by_email(db, username_or_email)
     if not user:
         return False
-    if not security.verify_password(password, user.hashed_password): # type: ignore
+    if not security.verify_password(password, user.hashed_password):  # type: ignore
         return False
     return user
 

@@ -4,9 +4,7 @@ from app.db import crud, models
 from app.db.database import get_db
 from sqlalchemy.orm import Session
 
-router = APIRouter(
-    
-)
+router = APIRouter()
 
 
 @router.get("")

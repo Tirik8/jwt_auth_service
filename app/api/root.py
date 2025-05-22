@@ -4,6 +4,7 @@ from app.core.config import settings
 
 router = APIRouter()
 
+
 @router.get("/")
 def read_root():
     return {"status": "ok", "timestamp": datetime.now()}
