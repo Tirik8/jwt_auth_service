@@ -62,7 +62,7 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) 
     return encoded_jwt
 
 
-def verify_token(token: str) -> dict: # type: ignore
+def verify_token(token: str) -> dict:
     try:
         payload = jwt.decode(token, JWT_PUBLIC_KEY, algorithms=[settings.ALGORITHM])
         return payload
@@ -73,14 +73,14 @@ def verify_token(token: str) -> dict: # type: ignore
 def verify_refresh_token(db: Session, token: str):
     try:
         payload = verify_token(token)
-        user_id: int = int(payload.get("sub")) # type: ignore
-        token_id: int = int(payload.get("token_id")) # type: ignore
+        user_id: int = int(payload.get("sub"))
+        token_id: int = int(payload.get("token_id"))
 
         if user_id is None:
             ServerException.verify_token_error()
 
-        db_token = crud.get_refresh_token(db, token_id) # type: ignore
-        if not db_token or not db_token.is_active: # type: ignore
+        db_token = crud.get_refresh_token(db, token_id)
+        if not db_token or not db_token.is_active:
             ServerException.verify_token_error()
 
         return db_token
@@ -93,8 +93,8 @@ async def validate_token(
 ) -> models.User:
     payload = verify_token(token)
 
-    username: str = payload.get("sub") # type: ignore
-    token_type_payload: str = payload.get("type") # type: ignore
+    username: str = payload.get("sub")
+    token_type_payload: str = payload.get("type")
 
     if username is None or token_type_payload != token_type:
         ServerException.invalid_token_type_or_subject()
@@ -114,13 +114,13 @@ async def get_current_user(
     try:
         token = credentials.credentials
         payload = verify_token(token)
-        username: str = payload.get("sub") # type: ignore
+        username: str = payload.get("sub")
         if username is None:
             ServerException.credentials_exception()
     except JWTError:
         ServerException.credentials_exception()
 
-    user = crud.get_user_by_username(db, username=username) # type: ignore
+    user = crud.get_user_by_username(db, username=username)
     if user is None:
         ServerException.credentials_exception()
 
@@ -130,7 +130,7 @@ async def get_current_user(
 async def get_current_active_user(
     current_user: models.User = Depends(get_current_user),
 ):
-    if not current_user.is_active: # type: ignore
+    if not current_user.is_active:
         ServerException.inactive_user()
 
     return current_user
@@ -139,6 +139,6 @@ async def get_current_active_user(
 async def is_superuser(
     current_user: models.User = Depends(get_current_active_user),
 ) -> bool:
-    if not current_user.is_superuser: # type: ignore
+    if not current_user.is_superuser:
         ServerException.not_superuser()
     return True

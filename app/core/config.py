@@ -4,6 +4,11 @@ from pydantic import PostgresDsn
 
 
 class Settings(BaseSettings):
+    APP: str
+    HOST: str
+    PORT: int
+    LOG_LEVEL: str
+    
     JWT_PRIVATE_KEY_PATH: Path
     JWT_PUBLIC_KEY_PATH: Path
     ALGORITHM: str
@@ -14,11 +19,15 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_HTTP_ONLY: bool
     REFRESH_TOKEN_SECURE: bool
     REFRESH_TOKEN_SAME_SITE: str
+    
+    #CRYPTO_CONTEXT: dict
 
     DATABASE_URL: PostgresDsn
+    
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 
 settings = Settings()

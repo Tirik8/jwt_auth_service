@@ -84,7 +84,7 @@ def revoke_refresh_token_by_id(db: Session, token_id: int):
         db.query(models.RefreshToken).filter(models.RefreshToken.id == token_id).first()
     )
     if db_token:
-        db_token.is_active = False # type: ignore
+        db_token.is_active = False
         db.commit()
         db.refresh(db_token)
     return db_token

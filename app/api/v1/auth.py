@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
+from fastapi import APIRouter, Depends, status, Response, Request
 from sqlalchemy.orm import Session
 from datetime import timedelta
 
@@ -37,7 +37,7 @@ async def register_and_login(
     )
     refresh_token, _ = crud.create_refresh_token(
         db,
-        user_id=user.id, # type: ignore
+        user_id=user.id,
         expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
     )
 
@@ -62,12 +62,12 @@ async def login(
         ServerException.incorrect_username_or_password()
 
     access_token = security.create_access_token(
-        data={"sub": user.username}, # type: ignore
+        data={"sub": user.username},
         expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
     )
     refresh_token, _ = crud.create_refresh_token(
         db,
-        user_id=user.id, # type: ignore
+        user_id=user.id,
         expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
     )
 
@@ -87,25 +87,25 @@ async def refresh_tokens(
     if not refresh_token:
         ServerException.refresh_token_missing()
 
-    db_token = security.verify_refresh_token(db, refresh_token) # type: ignore
+    db_token = security.verify_refresh_token(db, refresh_token)
 
     if not db_token:
         cookie.delete_refresh_token_cookie(responce)
         ServerException.invalid_refresh_token()
 
-    old_token = crud.revoke_refresh_token_by_id(db, db_token.id) # type: ignore
-    user = crud.get_user_by_id(db, db_token.user_id) # type: ignore
+    old_token = crud.revoke_refresh_token_by_id(db, db_token.id)
+    user = crud.get_user_by_id(db, db_token.user_id)
 
     access_token = security.create_access_token(
-        data={"sub": user.username}, # type: ignore
+        data={"sub": user.username},
         expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
     )
 
     refresh_token, _ = crud.create_refresh_token(
         db,
-        user_id=db_token.user_id, # type: ignore
+        user_id=db_token.user_id,
         expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
-        previous_token_id=old_token.id, # type: ignore
+        previous_token_id=old_token.id,
     )
     cookie.delete_refresh_token_cookie(responce)
     cookie.set_refresh_token_cookie(responce, refresh_token)
@@ -120,9 +120,9 @@ async def logout(
     db: Session = Depends(get_db),
 ):
     refresh_token = request.cookies.get(settings.REFRESH_TOKEN_COOKIE_NAME)
-    db_token = security.verify_refresh_token(db, refresh_token) # type: ignore
+    db_token = security.verify_refresh_token(db, refresh_token)
     if db_token:
-        crud.revoke_refresh_token_by_id(db, db_token.id) # type: ignore
+        crud.revoke_refresh_token_by_id(db, db_token.id)
 
     cookie.delete_refresh_token_cookie(responce)
     return {"message": "Logget out sucksessfully"}
