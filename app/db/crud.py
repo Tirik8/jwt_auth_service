@@ -24,7 +24,7 @@ def authenticate_user(db: Session, username_or_email: str, password: str):
         user = get_user_by_email(db, username_or_email)
     if not user:
         return False
-    if not security.verify_password(password, user.hashed_password):
+    if not security.verify_password(password, user.hashed_password): # type: ignore
         return False
     return user
 
@@ -84,7 +84,7 @@ def revoke_refresh_token_by_id(db: Session, token_id: int):
         db.query(models.RefreshToken).filter(models.RefreshToken.id == token_id).first()
     )
     if db_token:
-        db_token.is_active = False
+        db_token.is_active = False # type: ignore
         db.commit()
         db.refresh(db_token)
     return db_token

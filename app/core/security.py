@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 from typing import Annotated, Optional
+from fastapi import Depends
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.db import models, crud
 from app.db.database import get_db
 from app.utils import rsa
+from app.utils.exception import ServerException
 
 
 pwd_context = CryptContext(
@@ -52,41 +53,39 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) 
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        expire = datetime.utcnow() + timedelta(
+            days=settings.REFRESH_TOKEN_EXPIRE_DAYS
+        )
     to_encode.update({"exp": expire, "type": "refresh"})
     encoded_jwt = jwt.encode(to_encode, JWT_PRIVATE_KEY, algorithm=settings.ALGORITHM)
 
     return encoded_jwt
 
 
-def verify_token(token: str) -> dict:
+def verify_token(token: str) -> dict: # type: ignore
     try:
         payload = jwt.decode(token, JWT_PUBLIC_KEY, algorithms=[settings.ALGORITHM])
         return payload
     except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        ServerException.could_not_validate_credentials
 
 
 def verify_refresh_token(db: Session, token: str):
     try:
         payload = verify_token(token)
-        user_id: int = int(payload.get("sub"))
-        token_id: int = int(payload.get("token_id"))
+        user_id: int = int(payload.get("sub")) # type: ignore
+        token_id: int = int(payload.get("token_id")) # type: ignore
 
         if user_id is None:
-            raise HTTPException(status_code=400, detail="Verify token error")
+            ServerException.verify_token_error()
 
-        db_token = crud.get_refresh_token(db, token_id)
-        if not db_token or not db_token.is_active:
-            raise HTTPException(status_code=400, detail="Verify token error")
+        db_token = crud.get_refresh_token(db, token_id) # type: ignore
+        if not db_token or not db_token.is_active: # type: ignore
+            ServerException.verify_token_error()
 
         return db_token
     except JWTError:
-        raise HTTPException(status_code=400, detail="Verify token error")
+        ServerException.verify_token_error()
 
 
 async def validate_token(
@@ -94,23 +93,15 @@ async def validate_token(
 ) -> models.User:
     payload = verify_token(token)
 
-    username: str = payload.get("sub")
-    token_type_payload: str = payload.get("type")
+    username: str = payload.get("sub") # type: ignore
+    token_type_payload: str = payload.get("type") # type: ignore
 
     if username is None or token_type_payload != token_type:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token type or subject",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        ServerException.invalid_token_type_or_subject()
 
     user = crud.get_user_by_username(db, username=username)
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        ServerException.user_not_found()
 
     return user
 
@@ -119,23 +110,19 @@ async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer())],
     db: Session = Depends(get_db),
 ) -> models.User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+    
     try:
         token = credentials.credentials
         payload = verify_token(token)
-        username: str = payload.get("sub")
+        username: str = payload.get("sub") # type: ignore
         if username is None:
-            raise credentials_exception
+            ServerException.credentials_exception()
     except JWTError:
-        raise credentials_exception
+        ServerException.credentials_exception()
 
-    user = crud.get_user_by_username(db, username=username)
+    user = crud.get_user_by_username(db, username=username) # type: ignore
     if user is None:
-        raise credentials_exception
+        ServerException.credentials_exception()
 
     return user
 
@@ -143,8 +130,8 @@ async def get_current_user(
 async def get_current_active_user(
     current_user: models.User = Depends(get_current_user),
 ):
-    if not current_user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+    if not current_user.is_active: # type: ignore
+        ServerException.inactive_user()
 
     return current_user
 
@@ -152,6 +139,6 @@ async def get_current_active_user(
 async def is_superuser(
     current_user: models.User = Depends(get_current_active_user),
 ) -> bool:
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="You not superuser")
+    if not current_user.is_superuser: # type: ignore
+        ServerException.not_superuser()
     return True

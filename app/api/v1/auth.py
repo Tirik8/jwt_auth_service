@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.db import crud, schemas
 from app.db.database import get_db
 from app.utils import cookie
+from app.utils.exception import ServerException
 
 router = APIRouter()
 
@@ -23,16 +24,11 @@ async def register_and_login(
 ):
     db_user = crud.get_user_by_username(db, username=user.username)
     if db_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered",
-        )
+        ServerException.username_already_registered()
 
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
-        )
+        ServerException.email_already_registered()
     user = crud.create_user(db=db, user=user)
 
     access_token = security.create_access_token(
@@ -41,7 +37,7 @@ async def register_and_login(
     )
     refresh_token, _ = crud.create_refresh_token(
         db,
-        user_id=user.id,
+        user_id=user.id, # type: ignore
         expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
     )
 
@@ -63,18 +59,15 @@ async def login(
 ):
     user = crud.authenticate_user(db, form_data.username, form_data.password)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-        )
+        ServerException.incorrect_username_or_password()
 
     access_token = security.create_access_token(
-        data={"sub": user.username},
+        data={"sub": user.username}, # type: ignore
         expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
     )
     refresh_token, _ = crud.create_refresh_token(
         db,
-        user_id=user.id,
+        user_id=user.id, # type: ignore
         expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
     )
 
@@ -92,33 +85,27 @@ async def refresh_tokens(
     refresh_token = request.cookies.get(settings.REFRESH_TOKEN_COOKIE_NAME)
 
     if not refresh_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh token missing",
-        )
+        ServerException.refresh_token_missing()
 
-    db_token = security.verify_refresh_token(db, refresh_token)
+    db_token = security.verify_refresh_token(db, refresh_token) # type: ignore
 
     if not db_token:
         cookie.delete_refresh_token_cookie(responce)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid refresh token",
-        )
+        ServerException.invalid_refresh_token()
 
-    old_token = crud.revoke_refresh_token_by_id(db, db_token.id)
-    user = crud.get_user_by_id(db, db_token.user_id)
+    old_token = crud.revoke_refresh_token_by_id(db, db_token.id) # type: ignore
+    user = crud.get_user_by_id(db, db_token.user_id) # type: ignore
 
     access_token = security.create_access_token(
-        data={"sub": user.username},
+        data={"sub": user.username}, # type: ignore
         expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
     )
 
     refresh_token, _ = crud.create_refresh_token(
         db,
-        user_id=db_token.user_id,
+        user_id=db_token.user_id, # type: ignore
         expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
-        previous_token_id=old_token.id,
+        previous_token_id=old_token.id, # type: ignore
     )
     cookie.delete_refresh_token_cookie(responce)
     cookie.set_refresh_token_cookie(responce, refresh_token)
@@ -133,9 +120,9 @@ async def logout(
     db: Session = Depends(get_db),
 ):
     refresh_token = request.cookies.get(settings.REFRESH_TOKEN_COOKIE_NAME)
-    db_token = security.verify_refresh_token(db, refresh_token)
+    db_token = security.verify_refresh_token(db, refresh_token) # type: ignore
     if db_token:
-        crud.revoke_refresh_token_by_id(db, db_token.id)
+        crud.revoke_refresh_token_by_id(db, db_token.id) # type: ignore
 
     cookie.delete_refresh_token_cookie(responce)
     return {"message": "Logget out sucksessfully"}

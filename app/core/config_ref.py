@@ -4,14 +4,14 @@ from pydantic import Field, PostgresDsn
 
 
 class Settings(BaseSettings):
-    JWT_PRIVATE_KEY_PATH: Path = Path
-    JWT_PUBLIC_KEY_PATH: Path = Path
+    JWT_PRIVATE_KEY_PATH: Path = Path # type: ignore
+    JWT_PUBLIC_KEY_PATH: Path = Path # type: ignore
     ALGORITHM: str = "RS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     DATABASE_URL: PostgresDsn = Field(
         default="postgresql://user:password@server:port/database"
-    )
+    ) # type: ignore
 
     class Config:
         env_file = ".env"
