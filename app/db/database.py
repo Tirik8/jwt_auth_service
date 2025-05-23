@@ -9,7 +9,7 @@ from app.core.config import settings
 database_url = str(settings.DATABASE_URL)
 
 
-engine = create_async_engine(database_url, echo = True)
+engine = create_async_engine(database_url)
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 Base = declarative_base()
