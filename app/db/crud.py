@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from sqlalchemy import desc, select, update
+from sqlalchemy import desc, select
 from app.core import security
 from app.db import models, schemas
 from app.core.config import settings
@@ -7,7 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def get_user_by_username(db: AsyncSession, username: str):
-    result = await db.execute(select(models.User).filter(models.User.username == username))
+    result = await db.execute(
+        select(models.User).filter(models.User.username == username)
+    )
     return result.scalar_one_or_none()
 
 
@@ -79,14 +81,15 @@ async def create_refresh_token(
 
 
 async def get_refresh_token(db: AsyncSession, id: str):
-    result = await db.execute(select(models.RefreshToken).filter(models.RefreshToken.id == id))
+    result = await db.execute(
+        select(models.RefreshToken).filter(models.RefreshToken.id == id)
+    )
     return result.scalar_one_or_none()
 
 
 async def revoke_refresh_token_by_id(db: AsyncSession, token_id: int):
     result = await db.execute(
-        select(models.RefreshToken)
-        .where(models.RefreshToken.id == token_id)
+        select(models.RefreshToken).where(models.RefreshToken.id == token_id)
     )
     db_token = result.scalar_one()
     db_token.is_active = False
@@ -97,10 +100,10 @@ async def revoke_refresh_token_by_id(db: AsyncSession, token_id: int):
 
 async def get_refresh_tokens(db: AsyncSession, count: int, user_id: int):
     result = await db.execute(
-            select(models.RefreshToken)
+        select(models.RefreshToken)
         .filter(models.RefreshToken.user_id == user_id)
         .filter(models.RefreshToken.is_active)
         .order_by(desc(models.RefreshToken.created_at))
         .limit(count)
-        )
+    )
     return result.scalars().all()
