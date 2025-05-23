@@ -1,27 +1,30 @@
 from datetime import datetime, timedelta
-from sqlalchemy import desc
-from sqlalchemy.orm import Session
+from sqlalchemy import desc, select, update
 from app.core import security
 from app.db import models, schemas
 from app.core.config import settings
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
-def get_user_by_username(db: Session, username: str):
-    return db.query(models.User).filter(models.User.username == username).first()
+async def get_user_by_username(db: AsyncSession, username: str):
+    result = await db.execute(select(models.User).filter(models.User.username == username))
+    return result.scalar_one_or_none()
 
 
-def get_user_by_id(db: Session, id: int):
-    return db.query(models.User).filter(models.User.id == id).first()
+async def get_user_by_id(db: AsyncSession, id: int):
+    result = await db.execute(select(models.User).filter(models.User.id == id))
+    return result.scalar_one_or_none()
 
 
-def get_user_by_email(db: Session, email: str):
-    return db.query(models.User).filter(models.User.email == email).first()
+async def get_user_by_email(db: AsyncSession, email: str):
+    result = await db.execute(select(models.User).filter(models.User.email == email))
+    return result.scalar_one_or_none()
 
 
-def authenticate_user(db: Session, username_or_email: str, password: str):
-    user = get_user_by_username(db, username_or_email)
+async def authenticate_user(db: AsyncSession, username_or_email: str, password: str):
+    user = await get_user_by_username(db, username_or_email)
     if not user:
-        user = get_user_by_email(db, username_or_email)
+        user = await get_user_by_email(db, username_or_email)
     if not user:
         return False
     if not security.verify_password(password, user.hashed_password):
@@ -29,7 +32,7 @@ def authenticate_user(db: Session, username_or_email: str, password: str):
     return user
 
 
-def create_user(db: Session, user: schemas.UserCreate):
+async def create_user(db: AsyncSession, user: schemas.UserCreate):
     hashed_password = security.get_password_hash(user.password)
     db_user = models.User(
         username=user.username,
@@ -38,13 +41,13 @@ def create_user(db: Session, user: schemas.UserCreate):
         is_active=True,
     )
     db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
+    await db.commit()
+    await db.refresh(db_user)
     return db_user
 
 
-def create_refresh_token(
-    db: Session,
+async def create_refresh_token(
+    db: AsyncSession,
     user_id: int,
     expires_delta: timedelta | None = None,
     previous_token_id: int | None = None,
@@ -60,8 +63,8 @@ def create_refresh_token(
         previous_token_id=previous_token_id,
     )
     db.add(db_token)
-    db.commit()
-    db.refresh(db_token)
+    await db.commit()
+    await db.refresh(db_token)
 
     token_data = {
         "sub": str(user_id),
@@ -75,27 +78,29 @@ def create_refresh_token(
     return token, db_token
 
 
-def get_refresh_token(db: Session, id: str):
-    return db.query(models.RefreshToken).filter(models.RefreshToken.id == id).first()
+async def get_refresh_token(db: AsyncSession, id: str):
+    result = await db.execute(select(models.RefreshToken).filter(models.RefreshToken.id == id))
+    return result.scalar_one_or_none()
 
 
-def revoke_refresh_token_by_id(db: Session, token_id: int):
-    db_token = (
-        db.query(models.RefreshToken).filter(models.RefreshToken.id == token_id).first()
+async def revoke_refresh_token_by_id(db: AsyncSession, token_id: int):
+    result = await db.execute(
+        select(models.RefreshToken)
+        .where(models.RefreshToken.id == token_id)
     )
-    if db_token:
-        db_token.is_active = False
-        db.commit()
-        db.refresh(db_token)
+    db_token = result.scalar_one()
+    db_token.is_active = False
+    await db.commit()
+    await db.refresh(db_token)
     return db_token
 
 
-def get_refresh_tokens(db: Session, count: int, user_id: int):
-    return (
-        db.query(models.RefreshToken)
+async def get_refresh_tokens(db: AsyncSession, count: int, user_id: int):
+    result = await db.execute(
+            select(models.RefreshToken)
         .filter(models.RefreshToken.user_id == user_id)
         .filter(models.RefreshToken.is_active)
         .order_by(desc(models.RefreshToken.created_at))
         .limit(count)
-        .all()
-    )
+        )
+    return result.scalars().all()

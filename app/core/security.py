@@ -60,7 +60,7 @@ def verify_token(token: str) -> dict:
         ServerException.could_not_validate_credentials
 
 
-def verify_refresh_token(db: Session, token: str):
+async def verify_refresh_token(db: Session, token: str):
     try:
         payload = verify_token(token)
         user_id: int = int(payload.get("sub"))
@@ -68,8 +68,7 @@ def verify_refresh_token(db: Session, token: str):
 
         if user_id is None:
             ServerException.verify_token_error()
-
-        db_token = crud.get_refresh_token(db, token_id)
+        db_token = await crud.get_refresh_token(db, token_id)
         if not db_token or not db_token.is_active:
             ServerException.verify_token_error()
 
@@ -88,8 +87,7 @@ async def validate_token(
 
     if username is None or token_type_payload != token_type:
         ServerException.invalid_token_type_or_subject()
-
-    user = crud.get_user_by_username(db, username=username)
+    user = await crud.get_user_by_username(db, username=username)
     if user is None:
         ServerException.user_not_found()
 
@@ -108,8 +106,7 @@ async def get_current_user(
             ServerException.credentials_exception()
     except JWTError:
         ServerException.credentials_exception()
-
-    user = crud.get_user_by_username(db, username=username)
+    user = await crud.get_user_by_username(db, username=username)
     if user is None:
         ServerException.credentials_exception()
 

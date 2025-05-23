@@ -26,7 +26,7 @@ async def get_sessions(
     current_user: models.User = Depends(security.get_current_active_user),
     db: Session = Depends(get_db),
 ):
-    return crud.get_refresh_tokens(db, 5, current_user.id)
+    return await crud.get_refresh_tokens(db, 5, current_user.id)
 
 
 @router.delete("/sessions")
