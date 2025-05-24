@@ -4,6 +4,7 @@ from app.core import security
 from app.db import models, schemas
 from app.core.config import settings
 from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import UUID4
 
 
 async def get_user_by_username(db: AsyncSession, username: str):
@@ -13,7 +14,7 @@ async def get_user_by_username(db: AsyncSession, username: str):
     return result.scalar_one_or_none()
 
 
-async def get_user_by_id(db: AsyncSession, id: int):
+async def get_user_by_id(db: AsyncSession, id: UUID4):
     result = await db.execute(select(models.User).filter(models.User.id == id))
     return result.scalar_one_or_none()
 
@@ -50,9 +51,9 @@ async def create_user(db: AsyncSession, user: schemas.UserCreate):
 
 async def create_refresh_token(
     db: AsyncSession,
-    user_id: int,
+    user_id: UUID4,
     expires_delta: timedelta | None = None,
-    previous_token_id: int | None = None,
+    previous_token_id: UUID4 | None = None,
 ) -> tuple[str, models.RefreshToken]:
     expires_at = datetime.utcnow() + (
         expires_delta or timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
@@ -70,7 +71,7 @@ async def create_refresh_token(
 
     token_data = {
         "sub": str(user_id),
-        "token_id": db_token.id,
+        "token_id": str(db_token.id),
         "type": "refresh",
         "created_at": datetime.utcnow().isoformat(),
     }
@@ -80,14 +81,14 @@ async def create_refresh_token(
     return token, db_token
 
 
-async def get_refresh_token(db: AsyncSession, id: str):
+async def get_refresh_token(db: AsyncSession, id: UUID4):
     result = await db.execute(
         select(models.RefreshToken).filter(models.RefreshToken.id == id)
     )
     return result.scalar_one_or_none()
 
 
-async def revoke_refresh_token_by_id(db: AsyncSession, token_id: int):
+async def revoke_refresh_token_by_id(db: AsyncSession, token_id: UUID4):
     result = await db.execute(
         select(models.RefreshToken).where(models.RefreshToken.id == token_id)
     )
@@ -98,7 +99,7 @@ async def revoke_refresh_token_by_id(db: AsyncSession, token_id: int):
     return db_token
 
 
-async def get_refresh_tokens(db: AsyncSession, count: int, user_id: int):
+async def get_refresh_tokens(db: AsyncSession, count: int, user_id: UUID4):
     result = await db.execute(
         select(models.RefreshToken)
         .filter(models.RefreshToken.user_id == user_id)

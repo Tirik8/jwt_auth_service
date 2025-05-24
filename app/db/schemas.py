@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, UUID4
 from datetime import datetime
 from typing import Optional
 
@@ -33,18 +33,18 @@ class User(UserBase):
 
 
 class RefreshTokenCreate(BaseModel):
-    user_id: int
+    user_id: UUID4
     expires_at: datetime
 
 
 class RefreshTokenResponse(BaseModel):
-    id: int
+    id: UUID4
     token: str
-    user_id: int
+    user_id: UUID4
     is_active: bool
     created_at: datetime
     expires_at: datetime
-    previous_token_id: int | None = None
+    previous_token_id: UUID4 | None = None
 
     class Config:
         from_attributes = True

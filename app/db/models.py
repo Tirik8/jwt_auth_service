@@ -1,4 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
 from sqlalchemy.sql import func
 from .database import Base
 
@@ -6,7 +8,13 @@ from .database import Base
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(
+        UUID(as_uuid=True), 
+        default=uuid.uuid4, 
+        unique=True, 
+        primary_key=True, 
+        index=True
+    )
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
@@ -17,9 +25,9 @@ class User(Base):
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey(User.id))
+    id = Column(UUID(as_uuid=True), default=uuid.uuid4, unique=True, primary_key=True, index=True)
+    user_id = Column(UUID, ForeignKey(User.id))
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     expires_at = Column(DateTime(timezone=True))
-    previous_token_id = Column(Integer, ForeignKey(id), nullable=True)
+    previous_token_id = Column(UUID, ForeignKey(id), nullable=True)
