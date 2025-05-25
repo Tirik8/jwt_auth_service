@@ -20,6 +20,15 @@ class User(Base):
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
+    email_verified = Column(Boolean, default=False)
+    
+class EmailTokens(Base):
+    __tablename__ = "email_codes"
+    
+    id = Column(int, unique=True, primary_key=True, index=True)
+    user_id = Column(UUID, ForeignKey(User.id))
+    token = Column(UUID)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class RefreshToken(Base):
