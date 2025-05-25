@@ -3,7 +3,7 @@ name = "autorizer"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Tirik8", email = "yaroslavsemenoviop@gmail.com" }]
-requires-python = "~=3.10"
+requires-python = "~=3.12"
 readme = "README.md"
 license = "MIT"
 dependencies = [

@@ -5,6 +5,7 @@ from app.db import models, schemas
 from app.core.config import settings
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import UUID4
+from typing import Optional
 
 
 async def get_user_by_username(db: AsyncSession, username: str):
@@ -52,8 +53,8 @@ async def create_user(db: AsyncSession, user: schemas.UserCreate):
 async def create_refresh_token(
     db: AsyncSession,
     user_id: UUID4,
-    expires_delta: timedelta | None = None,
-    previous_token_id: UUID4 | None = None,
+    expires_delta: Optional[timedelta] = None,
+    previous_token_id: Optional[UUID4] = None, 
 ) -> tuple[str, models.RefreshToken]:
     expires_at = datetime.utcnow() + (
         expires_delta or timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)

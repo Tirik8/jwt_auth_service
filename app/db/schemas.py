@@ -44,7 +44,7 @@ class RefreshTokenResponse(BaseModel):
     is_active: bool
     created_at: datetime
     expires_at: datetime
-    previous_token_id: UUID4 | None = None
+    previous_token_id: Optional[UUID4] = None
 
     class Config:
         from_attributes = True
