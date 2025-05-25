@@ -109,3 +109,11 @@ async def get_refresh_tokens(db: AsyncSession, count: int, user_id: UUID4):
         .limit(count)
     )
     return result.scalars().all()
+async def create_email_code(db: AsyncSession, user_id: UUID4):
+    db_ver = models.EmailTokens(
+        user_id=user_id
+    )
+    db.add(db_ver)
+    await db.commit()
+    await db.refresh(db_ver)
+    return db_ver
