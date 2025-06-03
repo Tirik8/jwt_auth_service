@@ -56,7 +56,7 @@ async def login(
     responce: Response,
     db: AsyncSession = Depends(get_db),
 ):
-    user = await crud.authenticate_user(db, form_data.username, form_data.password)
+    user = await security.authenticate_user(db, form_data.username, form_data.password)
     if not user:
         ServerException.incorrect_username_or_password()
 
@@ -122,7 +122,7 @@ async def logout(
         await crud.revoke_refresh_token_by_id(db, db_token.id)
 
     cookie.delete_refresh_token_cookie(responce)
-    return {"message": "Logget out sucksessfully"}
+    return {"message": "Logget out succsessfully"}
 
 
 @router.post("/forgot-password")

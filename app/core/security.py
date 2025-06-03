@@ -4,7 +4,7 @@ from fastapi import Depends
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.db import models, crud
@@ -25,6 +25,15 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
+async def authenticate_user(db: AsyncSession, username_or_email: str, password: str):
+    user = await crud.get_user_by_username(db, username_or_email)
+    if not user:
+        user = await crud.get_user_by_email(db, username_or_email)
+    if not user:
+        return False
+    if not verify_password(password, user.hashed_password):
+        return False
+    return user
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
@@ -64,7 +73,7 @@ def verify_token(token: str) -> dict:
         ServerException.could_not_validate_credentials
 
 
-async def verify_refresh_token(db: Session, token: str):
+async def verify_refresh_token(db: AsyncSession, token: str):
     try:
         payload = verify_token(token)
         user_id: int = int(payload.get("sub"))
@@ -82,7 +91,7 @@ async def verify_refresh_token(db: Session, token: str):
 
 
 async def validate_token(
-    token: str, db: Session, token_type: str = "access"
+    token: str, db: AsyncSession, token_type: str = "access"
 ) -> models.User:
     payload = verify_token(token)
 
@@ -100,7 +109,7 @@ async def validate_token(
 
 async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer())],
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> models.User:
     try:
         token = credentials.credentials
@@ -119,7 +128,7 @@ async def get_current_user(
 
 async def get_current_active_user(
     current_user: models.User = Depends(get_current_user),
-):
+) -> models.User:
     if not current_user.is_active:
         ServerException.inactive_user()
 

@@ -16,24 +16,17 @@ async def get_user_by_username(db: AsyncSession, username: str):
 
 
 async def get_user_by_id(db: AsyncSession, id: UUID4):
-    result = await db.execute(select(models.User).filter(models.User.id == id))
+    result = await db.execute(
+        select(models.User).filter(models.User.id == id)
+    )
     return result.scalar_one_or_none()
 
 
 async def get_user_by_email(db: AsyncSession, email: str):
-    result = await db.execute(select(models.User).filter(models.User.email == email))
+    result = await db.execute(
+        select(models.User).filter(models.User.email == email)
+    )
     return result.scalar_one_or_none()
-
-
-async def authenticate_user(db: AsyncSession, username_or_email: str, password: str):
-    user = await get_user_by_username(db, username_or_email)
-    if not user:
-        user = await get_user_by_email(db, username_or_email)
-    if not user:
-        return False
-    if not security.verify_password(password, user.hashed_password):
-        return False
-    return user
 
 
 async def create_user(db: AsyncSession, user: schemas.UserCreate):
@@ -109,6 +102,7 @@ async def get_refresh_tokens(db: AsyncSession, count: int, user_id: UUID4):
         .limit(count)
     )
     return result.scalars().all()
+
 async def create_email_code(db: AsyncSession, user_id: UUID4):
     db_ver = models.EmailTokens(
         user_id=user_id
