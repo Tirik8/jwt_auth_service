@@ -18,6 +18,7 @@ pwd_context = CryptContext(**settings.CRYPTO_CONTEXT.config_dict)
 JWT_PRIVATE_KEY, JWT_PUBLIC_KEY = rsa.load_rsa_keys()
 
 
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
