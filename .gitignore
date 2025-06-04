@@ -1,8 +1,8 @@
+.venv
 .env
+.ruff_cache/
 certs/
-poetry.lock
-alembic.ini
-migrations/*
-!migrations/env.py
 __pycache__
-app/core/config.py
+Dockerfile
+docker-compose.yml
+.dockerignore

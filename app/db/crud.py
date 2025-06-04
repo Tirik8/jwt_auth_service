@@ -1,101 +1,113 @@
 from datetime import datetime, timedelta
-from sqlalchemy import desc
-from sqlalchemy.orm import Session
+from sqlalchemy import desc, select
 from app.core import security
 from app.db import models, schemas
 from app.core.config import settings
+from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import UUID4
+from typing import Optional
 
-def get_user_by_username(db: Session, username: str):
-    return db.query(models.User).filter(models.User.username == username).first()
 
-def get_user_by_id(db: Session, id: int):
-    return db.query(models.User).filter(models.User.id == id).first()
+async def get_user_by_username(db: AsyncSession, username: str):
+    result = await db.execute(
+        select(models.User).filter(models.User.username == username)
+    )
+    return result.scalar_one_or_none()
 
-def get_user_by_email(db: Session, email: str):
-    return db.query(models.User).filter(models.User.email == email).first()
 
-def authenticate_user(db: Session, username_or_email: str, password: str):
-    user = get_user_by_username(db, username_or_email)
-    if not user:
-        user = get_user_by_email(db, username_or_email)
-    if not user:
-        return False
-    if not security.verify_password(password, user.hashed_password):
-        return False
-    return user
+async def get_user_by_id(db: AsyncSession, id: UUID4):
+    result = await db.execute(
+        select(models.User).filter(models.User.id == id)
+    )
+    return result.scalar_one_or_none()
 
-def create_user(db: Session, user: schemas.UserCreate):
+
+async def get_user_by_email(db: AsyncSession, email: str):
+    result = await db.execute(
+        select(models.User).filter(models.User.email == email)
+    )
+    return result.scalar_one_or_none()
+
+
+async def create_user(db: AsyncSession, user: schemas.UserCreate):
     hashed_password = security.get_password_hash(user.password)
     db_user = models.User(
         username=user.username,
         email=user.email,
         hashed_password=hashed_password,
-        is_active=True
+        is_active=True,
     )
     db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
+    await db.commit()
+    await db.refresh(db_user)
     return db_user
 
-def create_refresh_token(
-    db: Session, 
-    user_id: int, 
-    expires_delta: timedelta | None = None,
-    previous_token_id: int | None = None
-    ) -> tuple[str, models.RefreshToken]:
-    
-    expires_at = datetime.utcnow() + (expires_delta or timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS))
-    
-    token_data = {
-        "sub": str(user_id),
-        "type": "refresh",
-        "created_at": datetime.utcnow().isoformat()
-    }
-    token = security.create_refresh_token(data=token_data, expires_delta=expires_delta)
-    
+
+async def create_refresh_token(
+    db: AsyncSession,
+    user_id: UUID4,
+    expires_delta: Optional[timedelta] = None,
+    previous_token_id: Optional[UUID4] = None, 
+) -> tuple[str, models.RefreshToken]:
+    expires_at = datetime.utcnow() + (
+        expires_delta or timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    )
+
     db_token = models.RefreshToken(
-        token=token,
         user_id=user_id,
         expires_at=expires_at,
         is_active=True,
-        previous_token_id = previous_token_id
+        previous_token_id=previous_token_id,
     )
     db.add(db_token)
-    db.commit()
-    db.refresh(db_token)
-    
+    await db.commit()
+    await db.refresh(db_token)
+
+    token_data = {
+        "sub": str(user_id),
+        "token_id": str(db_token.id),
+        "type": "refresh",
+        "created_at": datetime.utcnow().isoformat(),
+    }
+
+    token = security.create_refresh_token(data=token_data, expires_delta=expires_delta)
+
     return token, db_token
 
-def get_refresh_token(db: Session, token: str):
-    return db.query(models.RefreshToken)\
-            .filter(models.RefreshToken.token == token)\
-            .first()
 
-def revoke_refresh_token_by_id(db: Session, token_id: int):
-    db_token = db.query(models.RefreshToken)\
-                .filter(models.RefreshToken.id == token_id)\
-                .first()
-    if db_token:
-        db_token.is_active = False
-        db.commit()
-        db.refresh(db_token)
+async def get_refresh_token(db: AsyncSession, id: UUID4):
+    result = await db.execute(
+        select(models.RefreshToken).filter(models.RefreshToken.id == id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def revoke_refresh_token_by_id(db: AsyncSession, token_id: UUID4):
+    result = await db.execute(
+        select(models.RefreshToken).where(models.RefreshToken.id == token_id)
+    )
+    db_token = result.scalar_one()
+    db_token.is_active = False
+    await db.commit()
+    await db.refresh(db_token)
     return db_token
 
-def revoke_refresh_token_by_token(db: Session, token: str):
-    db_token = db.query(models.RefreshToken)\
-                .filter(models.RefreshToken.token == token)\
-                .first()
-    if db_token:
-        db_token.is_active = False
-        db.commit()
-        db.refresh(db_token)
-    return db_token
 
-def get_refresh_tokens(db: Session, count: int, user_id: int):
-    return db.query(models.RefreshToken)\
-        .filter(models.RefreshToken.user_id == user_id)\
-        .filter(models.RefreshToken.is_active == True)\
-        .order_by(desc(models.RefreshToken.created_at))\
-        .limit(count)\
-        .all()
-        
+async def get_refresh_tokens(db: AsyncSession, count: int, user_id: UUID4):
+    result = await db.execute(
+        select(models.RefreshToken)
+        .filter(models.RefreshToken.user_id == user_id)
+        .filter(models.RefreshToken.is_active)
+        .order_by(desc(models.RefreshToken.created_at))
+        .limit(count)
+    )
+    return result.scalars().all()
+
+async def create_email_code(db: AsyncSession, user_id: UUID4):
+    db_ver = models.EmailTokens(
+        user_id=user_id
+    )
+    db.add(db_ver)
+    await db.commit()
+    await db.refresh(db_ver)
+    return db_ver

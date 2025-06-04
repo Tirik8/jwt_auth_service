@@ -1,17 +1,21 @@
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
 
-from app.core.config import settings
-from app.routers import auth, users
-from app.db.database import engine, Base
+from app import api
+from app.api.root import router as root_router
 
-Base.metadata.create_all(bind=engine)
-
-app = FastAPI()
+from app.db.database import engine
+from app.db import models
 
 
-app.include_router(auth.router)
-app.include_router(users.router)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with engine.begin() as conn:
+        await conn.run_sync(models.Base.metadata.create_all)
+    yield
 
-@app.get("/")
-def read_root():
-    return {"message": "Auth Service"}
+
+app = FastAPI(lifespan=lifespan)
+
+app.include_router(api.router, prefix="/api")
+app.include_router(root_router, prefix="")
