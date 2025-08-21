@@ -5,3 +5,7 @@
 3. Включить postgres
 4. Добавить в корень .env и указать параметры, как в app/core/config.py (APP = "app.main:app")
 5. Запустить в корне main.py
+
+
+## Feautures
+1. QR auth

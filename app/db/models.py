@@ -25,7 +25,7 @@ class User(Base):
 class EmailTokens(Base):
     __tablename__ = "email_codes"
     
-    id = Column(int, unique=True, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), unique=True, primary_key=True, index=True)
     user_id = Column(UUID, ForeignKey(User.id))
     token = Column(UUID)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

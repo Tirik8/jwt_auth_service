@@ -17,7 +17,7 @@ router = APIRouter()
     response_model=schemas.TokenResponse,
     status_code=status.HTTP_201_CREATED,
 )
-async def register_and_login(
+async def register(
     user: schemas.UserCreate,
     responce: Response,
     db: AsyncSession = Depends(get_db),
